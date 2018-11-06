@@ -290,7 +290,7 @@ static int mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
 {
     MpegTSWrite *ts = s->priv_data;
     uint8_t data[SECTION_LENGTH], *q, *desc_length_ptr, *program_info_length_ptr;
-    int val, stream_type, i, err = 0;
+    int val, stream_type, i, err = 0, supports_scte35 = 0;
 
     q = data;
     put16(&q, 0xe000 | service->pcr_pid);
@@ -298,7 +298,22 @@ static int mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
     program_info_length_ptr = q;
     q += 2; /* patched after */
 
-    /* put program info here */
+    for (i = 0; i < s->nb_streams; i++) {
+        AVStream* st = s->streams[i];
+        if (st->codecpar->codec_id == AV_CODEC_ID_SCTE_35) {
+            supports_scte35 = 1;
+            break;
+        }
+    }
+
+    if (supports_scte35) {
+        *q++ = 0x05; /* MPEG-2 registration descriptor */
+        *q++ = 4;
+        *q++ = 'C';
+        *q++ = 'U';
+        *q++ = 'E';
+        *q++ = 'I';
+    }
 
     val = 0xf000 | (q - program_info_length_ptr - 2);
     program_info_length_ptr[0] = val >> 8;
@@ -388,6 +403,9 @@ static int mpegts_write_pmt(AVFormatContext *s, MpegTSService *service)
             break;
         case AV_CODEC_ID_TIMED_ID3:
             stream_type = STREAM_TYPE_METADATA;
+            break;
+        case AV_CODEC_ID_SCTE_35:
+            stream_type = STREAM_TYPE_SCTE_35;
             break;
         default:
             stream_type = STREAM_TYPE_PRIVATE_DATA;

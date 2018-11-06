@@ -57,6 +57,7 @@
 #define STREAM_TYPE_VIDEO_CAVS      0x42
 #define STREAM_TYPE_VIDEO_VC1       0xea
 #define STREAM_TYPE_VIDEO_DIRAC     0xd1
+#define STREAM_TYPE_SCTE_35         0x86
 
 #define STREAM_TYPE_AUDIO_AC3       0x81
 #define STREAM_TYPE_AUDIO_DTS       0x82
